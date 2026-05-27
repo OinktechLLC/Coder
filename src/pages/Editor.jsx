@@ -374,7 +374,7 @@ const EditorPage = () => {
       flexDirection: 'column',
       height: '100vh',
       background: '#1e1e1e',
-      overflow: 'hidden'
+      overflow: 'auto'
     }}>
       {/* Notifications */}
       <div style={{
