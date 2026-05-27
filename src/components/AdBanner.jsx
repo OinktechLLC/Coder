@@ -1,66 +1,113 @@
-import React, { useRef } from 'react';
-import { useAdBanner } from '../hooks/useAdBanner';
+import React, { useEffect, useRef } from 'react';
+import { X } from 'lucide-react';
 
-const AdBanner = () => {
-  const { adConfig, isVisible, canvasRef, setCanvasRef, handleAdClick, closeAd } = useAdBanner();
-  const bannerRef = useRef(null);
+const AdBanner = ({ config, onClose }) => {
+  const canvasRef = useRef(null);
 
-  if (!adConfig || !adConfig.enabled) {
-    return null;
-  }
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-  // Защита от удаления - баннер всегда в DOM
+    const ctx = canvas.getContext('2d');
+    
+    // Draw gradient background
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, '#667eea');
+    gradient.addColorStop(1, '#764ba2');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw text
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 24px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(config.title || 'Реклама', canvas.width / 2, canvas.height / 2);
+
+    // Draw decorative elements
+    ctx.beginPath();
+    ctx.arc(50, 50, 30, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(canvas.width - 50, canvas.height - 50, 40, 0, Math.PI * 2);
+    ctx.stroke();
+  }, [config]);
+
+  const handleClick = () => {
+    window.open(config.url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
-    <div
-      ref={bannerRef}
-      className={`ad-banner-protected transition-all duration-500 ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'
-      }`}
-      style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 9999,
-        pointerEvents: 'auto',
-        display: 'block'
-      }}
-    >
-      {/* Canvas для рендеринга рекламы */}
+    <div style={{
+      position: 'relative',
+      width: '100%',
+      height: '80px',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      overflow: 'hidden',
+      cursor: 'pointer'
+    }} onClick={handleClick}>
       <canvas
-        ref={setCanvasRef}
-        className="ad-banner-canvas w-full cursor-pointer"
-        style={{ height: '100px' }}
-        onClick={handleAdClick}
+        ref={canvasRef}
+        width={400}
+        height={80}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          opacity: 0.3
+        }}
       />
       
-      {/* Кнопка закрытия */}
-      <button
-        onClick={closeAd}
-        className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-red-500 hover:bg-red-600 text-white transition-all duration-300 z-10"
-        aria-label="Закрыть рекламу"
-      >
-        ✕
-      </button>
-      
-      {/* Ссылка на рекламный сайт */}
-      {adConfig.linkUrl && (
-        <a
-          href={adConfig.linkUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="absolute inset-0 w-full h-full cursor-pointer"
-          onClick={handleAdClick}
-        />
-      )}
-      
-      {/* Текст рекламы (резервный вариант если canvas не загрузился) */}
-      <div className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none">
-        <div className="text-white">
-          <h3 className="text-xl font-bold">{adConfig.title}</h3>
-          <p className="text-sm opacity-70">Нажмите для перехода</p>
-        </div>
+      <div style={{
+        position: 'relative',
+        zIndex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+        color: 'white',
+        fontSize: '18px',
+        fontWeight: '600'
+      }}>
+        {config.title}
+        <span style={{
+          marginLeft: '12px',
+          padding: '4px 12px',
+          background: 'rgba(255, 255, 255, 0.2)',
+          borderRadius: '12px',
+          fontSize: '12px'
+        }}>
+          Реклама
+        </span>
       </div>
+
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+        style={{
+          position: 'absolute',
+          top: '8px',
+          right: '8px',
+          background: 'rgba(255, 255, 255, 0.2)',
+          border: 'none',
+          borderRadius: '50%',
+          width: '24px',
+          height: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          color: 'white',
+          transition: 'background 0.2s'
+        }}
+      >
+        <X size={14} />
+      </button>
     </div>
   );
 };
