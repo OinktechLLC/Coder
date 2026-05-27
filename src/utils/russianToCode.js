@@ -1,6 +1,6 @@
 class RussianToCode {
   static keywords = {
-    // Pawno/Russian translations
+    // Pawno/Russian translations - основные ключевые слова
     'если': 'if',
     'иначе': 'else',
     'пока': 'while',
@@ -18,35 +18,109 @@ class RussianToCode {
     'истина': 'true',
     'ложь': 'false',
     
-    // Functions
+    // Функции вывода
     'печатать': 'Print',
+    'напечатать': 'Print',
     'вывести': 'printf',
-    'основная': 'main',
-    'функция': 'function',
+    'показать': 'Show',
+    'сообщение': 'Message',
     
-    // Variables
+    // Основная функция
+    'основная': 'main',
+    'главная': 'main',
+    'старт': 'start',
+    'запуск': 'launch',
+    
+    // События игрока
+    'игрок зашел': 'OnPlayerConnect',
+    'игрок вышел': 'OnPlayerDisconnect',
+    'игрок написал': 'OnPlayerText',
+    'игрок ввел команду': 'OnPlayerCommandText',
+    'игрок обновился': 'OnPlayerUpdate',
+    'игрок нажал': 'OnPlayerKeyPress',
+    'игрок получил урон': 'OnPlayerTakeDamage',
+    'игрок умер': 'OnPlayerDeath',
+    'игрок заспавнился': 'OnPlayerSpawn',
+    
+    // Переменные и типы
     'игрок': 'playerid',
     'текст': 'text',
     'число': 'number',
-    'строка': 'string'
+    'строка': 'string',
+    'массив': 'array',
+    'булево': 'bool',
+    
+    // Другие полезные слова
+    'функция': 'function',
+    'переменная': 'variable',
+    'цикл': 'loop',
+    'условие': 'condition',
+    'событие': 'event',
+    'таймер': 'timer',
+    'задержка': 'delay'
   };
+
+  // Фразы-паттерны которые нужно заменять целиком
+  static patterns = [
+    // Если игрок зашел { ... } -> OnPlayerConnect(playerid) { ... }
+    {
+      regex: /если\s+игрок\s+зашел\s*\{/gi,
+      replacement: 'OnPlayerConnect(playerid) {'
+    },
+    // Если игрок вышел { ... } -> OnPlayerDisconnect(playerid, reason) { ... }
+    {
+      regex: /если\s+игрок\s+вышел\s*\{/gi,
+      replacement: 'OnPlayerDisconnect(playerid, reason) {'
+    },
+    // Игрок написал { ... } -> OnPlayerText(playerid, text[]) { ... }
+    {
+      regex: /игрок\s+написал\s*\{/gi,
+      replacement: 'OnPlayerText(playerid, text[]) {'
+    },
+    // Игрок ввел команду { ... } -> OnPlayerCommandText(playerid, cmdtext[]) { ... }
+    {
+      regex: /игрок\s+ввел\s+команду\s*\{/gi,
+      replacement: 'OnPlayerCommandText(playerid, cmdtext[]) {'
+    },
+    // Печатать("...") -> Print("...")
+    {
+      regex: /печатать\s*\(/gi,
+      replacement: 'Print('
+    },
+    // Напечатать("...") -> Print("...")
+    {
+      regex: /напечатать\s*\(/gi,
+      replacement: 'Print('
+    },
+    // Вывести("...") -> printf("...")
+    {
+      regex: /вывести\s*\(/gi,
+      replacement: 'printf('
+    }
+  ];
 
   static convert(code) {
     let converted = code;
 
-    // Replace Russian keywords with English equivalents
+    // Сначала применяем паттерны для сложных конструкций
+    this.patterns.forEach(pattern => {
+      converted = converted.replace(pattern.regex, pattern.replacement);
+    });
+
+    // Затем заменяем отдельные ключевые слова
     Object.entries(this.keywords).forEach(([ru, en]) => {
+      // Создаем regex который учитывает границы слов
       const regex = new RegExp(`\\b${ru}\\b`, 'gi');
       converted = converted.replace(regex, en);
     });
 
-    // Convert Russian comments to English (optional)
-    converted = converted.replace(/\/\/\s*(.*)/g, (match, comment) => {
-      return `// ${comment}`;
-    });
+    // Обрабатываем русские комментарии - оставляем как есть
+    // converted = converted.replace(/\/\/\s*(.*)/g, (match, comment) => {
+    //   return `// ${comment}`;
+    // });
 
-    // Handle Russian characters in strings - keep them as is
-    // This allows Russian text in Print() and other functions
+    // Русские строки оставляем без изменений
+    // Это позволяет использовать русский текст в Print() и других функциях
     
     return converted;
   }
@@ -63,7 +137,7 @@ class RussianToCode {
   }
 
   static validateRussianKeywords(code) {
-    // Check if Russian keywords are properly converted
+    // Проверяем какие русские ключевые слова найдены в коде
     const russianKeywords = Object.keys(this.keywords);
     const foundKeywords = [];
     
@@ -74,9 +148,24 @@ class RussianToCode {
       }
     });
     
+    // Проверяем паттерны
+    this.patterns.forEach((pattern, index) => {
+      if (pattern.regex.test(code)) {
+        foundKeywords.push(`паттерн_${index}`);
+      }
+    });
+    
     return {
       hasRussian: foundKeywords.length > 0,
       keywords: foundKeywords
+    };
+  }
+
+  // Получить список всех поддерживаемых русских ключевых слов
+  static getSupportedKeywords() {
+    return {
+      keywords: Object.keys(this.keywords),
+      patterns: this.patterns.map(p => p.regex.source)
     };
   }
 }

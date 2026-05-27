@@ -31,6 +31,7 @@ const EditorPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [projectName, setProjectName] = useState('');
   const [showOutputPanel, setShowOutputPanel] = useState(true);
+  const [lastCompiledResult, setLastCompiledResult] = useState(null);
   const [outputHeight, setOutputHeight] = useState(40);
   const editorRef = useRef(null);
 
@@ -311,11 +312,12 @@ const EditorPage = () => {
       if (language === 'pawno') {
         result = Compiler.compilePawno(processedCode);
       } else {
-        result = Compiler.compileGeneric(processedCode, language);
+        result = Compiler.compile(processedCode, language);
       }
       
       setCompilerOutput(result.output);
       setOutput(result.output.join('\n'));
+      setLastCompiledResult(result);
       
       if (result.success) {
         addNotification('Компиляция успешна!', 'success');
@@ -634,6 +636,41 @@ const EditorPage = () => {
               >
                 <Download size={14} />
                 Скачать проект
+              </button>
+
+              <button
+                onClick={() => {
+                  if (!lastCompiledResult || !lastCompiledResult.binary) {
+                    addNotification('Сначала скомпилируйте код', 'error');
+                    return;
+                  }
+                  try {
+                    const binaryData = atob(lastCompiledResult.binary);
+                    const arrayBuffer = new ArrayBuffer(binaryData.length);
+                    const uint8Array = new Uint8Array(arrayBuffer);
+                    for (let i = 0; i < binaryData.length; i++) {
+                      uint8Array[i] = binaryData.charCodeAt(i);
+                    }
+                    const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = lastCompiledResult.filename || 'compiled.bin';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    addNotification(`Файл ${lastCompiledResult.filename} скачан`, 'success');
+                    if (soundEnabled) playSound('compile');
+                  } catch (error) {
+                    addNotification('Ошибка при скачивании', 'error');
+                  }
+                }}
+                className="btn-secondary"
+                style={{ width: '100%', padding: '8px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '16px', backgroundColor: lastCompiledResult ? '#10b981' : '#3c3c3c', opacity: lastCompiledResult ? 1 : 0.5 }}
+              >
+                <Download size={14} />
+                Скачать скомпилированный файл
               </button>
 
               {/* Search Files */}
